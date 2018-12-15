@@ -96,6 +96,3 @@ resource "aws_nat_gateway" "ngw" {
 
 
 
-output "vpc_id" {
-    value = "${aws_vpc.ops_assign_3.id}"
-}

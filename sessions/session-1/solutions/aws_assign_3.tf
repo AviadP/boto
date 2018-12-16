@@ -177,24 +177,17 @@ resource "aws_instance" "nginx_c" {
     ami                         = "ami-0ac019f4fcb7cb7e6"
     availability_zone           = "us-east-1c"
     instance_type               = "t2.micro"
-    key_name                    = "virginia_default"
+    key_name                    = "${var.key_name}"
     subnet_id                   = "${aws_subnet.private_c.id}"
     vpc_security_group_ids      = ["${aws_security_group.general_sg.id}"]
     associate_public_ip_address = false
+    user_data = "${file("cretewebsrv.sh")}"
 
     root_block_device {
         volume_type           = "gp2"
         volume_size           = 8
         delete_on_termination = true
     }
-
-    provisioner "remote-exec" {
-    inline = [
-      "sudo apt update -y",
-      "sudo apt install nginx -y",
-      "sudo service nginx start"
-    ]
-  }
 
     tags {
         "Name" = "nginx_c"
@@ -205,10 +198,11 @@ resource "aws_instance" "nginx_d" {
     ami                         = "ami-0ac019f4fcb7cb7e6"
     availability_zone           = "us-east-1d"
     instance_type               = "t2.micro"
-    key_name                    = "virginia_default"
+    key_name                    = "${var.key_name}"
     subnet_id                   = "${aws_subnet.private_d.id}"
     vpc_security_group_ids      = ["${aws_security_group.general_sg.id}"]
     associate_public_ip_address = false
+    user_data = "${file("cretewebsrv.sh")}"
 
     root_block_device {
         volume_type           = "gp2"
@@ -216,22 +210,52 @@ resource "aws_instance" "nginx_d" {
         delete_on_termination = true
     }
 
-    provisioner "remote-exec" {
-    inline = [
-      "sudo apt update -y",
-      "sudo apt install nginx -y",
-      "sudo service nginx start"
-    ]
-  }
-
     tags {
         "Name" = "nginx_d"
         "Project" = "Opsschool_terraform_assingment"
     }
 }
+########### ELB ###################
+resource "aws_elb" "elb" {
+    name                        = "ELBclassic"
+    subnets                     = ["${aws_subnet.public_c.id}", "${aws_subnet.public_d.id}"]
+    security_groups             = ["${aws_security_group.general_sg.id}"]
+    instances                   = ["${aws_instance.nginx_c.id}", "${aws_instance.nginx_d.id}"]
+    cross_zone_load_balancing   = true
+    idle_timeout                = 60
+    connection_draining         = true
+    connection_draining_timeout = 300
+    internal                    = false
 
+    listener {
+        instance_port      = 80
+        instance_protocol  = "http"
+        lb_port            = 80
+        lb_protocol        = "http"
+        ssl_certificate_id = ""
+    }
 
+    health_check {
+        healthy_threshold   = 2
+        unhealthy_threshold = 2
+        interval            = 30
+        target              = "HTTP:80/"
+        timeout             = 5
+    }
 
+    tags {
+        "Name" = "ELB_classic"
+        "Project" = "Opsschool_terraform_assingment"
+    }
+}
+
+##################################################################################
+# OUTPUT
+##################################################################################
+
+output "aws_elb_public_dns" {
+    value = "${aws_elb.elb.dns_name}"
+}
 
 
 

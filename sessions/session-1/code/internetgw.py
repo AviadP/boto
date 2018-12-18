@@ -18,36 +18,11 @@ def create_internet_gateway():
     return response
 
 
-def create_dhcp_options():
-    """ Return description of created dhcp options """
-    response = EC2.create_dhcp_options(
-        DhcpConfigurations=[
-            {
-                'Key': 'domain-name-servers',
-                'Values': [
-                    '10.21.0.10',
-                    '10.21.2.10',
-                ],
-            },
-        ],
-    )
-    return response
-
-
 def attach_internet_gateway(vpc_id, igw_id):
     """ Attach a given igw to a given vpc """
     response = EC2.attach_internet_gateway(
         InternetGatewayId=igw_id,
         VpcId=vpc_id
-    )
-    return response
-
-
-def associate_dhcp_options(vpc_id, dhcp_options_id):
-    """ Associate a given dhcp_options to a given vpc """
-    response = EC2.associate_dhcp_options(
-        DhcpOptionsId=dhcp_options_id,
-        VpcId=vpc_id,
     )
     return response
 
@@ -80,6 +55,3 @@ if __name__ == '__main__':
     RESPONSE_IGW = create_internet_gateway()
     IGW_ID = RESPONSE_IGW['InternetGateway']['InternetGatewayId']
     RESPONSE_ATTACHE_IGW = attach_internet_gateway(VPC_ID, IGW_ID)
-    RESPONSE_CREATE_DHCP_OPTIONS = create_dhcp_options()
-    DHCP_OPTIONS_ID = RESPONSE_CREATE_DHCP_OPTIONS['DhcpOptions']['DhcpOptionsId']
-    RESPONSE_ASSPCIATE_DHCP = associate_dhcp_options(VPC_ID, DHCP_OPTIONS_ID)
